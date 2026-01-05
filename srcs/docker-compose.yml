@@ -1,0 +1,83 @@
+#version: '3.1'
+
+services:
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    networks:
+      - inception
+    restart: unless-stopped
+    build:
+      context: ./requirements/mariadb
+    env_file:
+        - .env
+    volumes:
+      - mariadb:/var/lib/mysql
+    expose:
+      - "3306"
+    healthcheck:
+      test: mysqladmin ping --host=localhost -p${DB_PASSWORD}
+      interval: 5s
+      timeout: 1s 
+      retries: 20
+      start_period: 5s
+
+
+  wordpress:
+    image: wordpress
+    container_name: wordpress
+    networks:
+      - inception
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
+    build:
+      context: ./requirements/wordpress
+    env_file:
+      - .env
+    volumes:
+      - wordpress:/var/www/html/wordpress
+    expose:
+      - "9000"
+      
+  nginx:
+    image: nginx
+    container_name: nginx
+    networks:
+      - inception
+    depends_on:
+      - wordpress
+    restart: unless-stopped
+    build:
+      context: ./requirements/nginx
+    env_file:
+      - .env
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress:/var/www/html/wordpress
+    healthcheck:
+      interval: 5s
+      timeout: 1s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  mariadb:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "/home/pgiroux/data/mariadb"
+  wordpress:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "/home/pgiroux/data/wordpress"
+
+networks:
+  inception:
+    name: inception
+    driver: bridge
