@@ -86,28 +86,13 @@ Utilisations courantes
 
         Dockerfile :
 
-        # Install NGINX, vim, curl, and SSL
+# Use Debian bookworm as the base image
 FROM debian:bookworm
 
-# Update the package list
-RUN apt  update -y
+# Update the package list install NGINX vim curl openssl And Create directory for SSL certificates 
+apt update -y && apt install nginx vim curl -y && mkdir -p /etc/nginx/ssl && apt install openssl -y
 
-# Install NGINX
-RUN apt install -y nginx
-
-# Install vim
-RUN apt install -y vim
-
-# Install curl
-RUN apt install -y curl
-
-# Create directory for SSL certificates
-RUN mkdir -p /etc/nginx/ssl
-
-# Install openssl
-RUN apt-get install -y openssl
-
-# Generate SSL certificate and key
+#Create SSL keys & certificates
 RUN openssl req -x509 -nodes -out /etc/nginx/ssl/inception.crt -keyout /etc/nginx/ssl/inception.key -subj "/C=FR/ST=IDF/L=Paris/O=42/OU=42/CN=pgiroux.42.fr/UID=pgiroux"
 
 # Create directory for NGINX run files
@@ -116,11 +101,8 @@ RUN mkdir -p /var/run/nginx
 # Copy the NGINX configuration file to the container
 COPY ./conf/nginx.conf /etc/nginx/nginx.conf
 
-# Set permissions for the web root directory
-RUN chmod 755 /var/www/html
-
-# Change ownership of the web root directory to www-data
-RUN chown -R www-data:www-data /var/www/html
+# Set permissions for the web root directory and Change ownership of the web root directory to www-data
+RUN chmod 755 /var/www/html && chown -R www-data:www-data /var/www/html
 
 # Start NGINX in the foreground
 CMD ["nginx", "-g", "daemon off;"]
@@ -140,8 +122,6 @@ include /etc/nginx/modules-enabled/*.conf;
 events {
     # Set the maximum number of simultaneous connections that can be handled by a worker process
     worker_connections 1024;
-    # Enable accepting multiple new connections at once (uncomment to activate)
-    # multi_accept on;
 }
 
 # Define HTTP server settings
@@ -153,10 +133,17 @@ http {
         listen 443 ssl;
         listen [::]:443 ssl;
 
+        # Define the supported SSL/TLS protocols
+        ssl_protocols TLSv1.2 TLSv1.3;
+        # Specify the path to the SSL certificate
+        ssl_certificate /etc/nginx/ssl/inception.crt;
+        # Specify the path to the SSL certificate key
+        ssl_certificate_key /etc/nginx/ssl/inception.key;
+
         # Set the root directory for the web server
         root /var/www/html/wordpress;
         # Define the server's hostname
-        server_name sdanel.42.fr;
+        server_name pgiroux.42.fr;
         # Define the default files to serve
         index index.php index.html index.htm index.nginx-debian.html;
 
@@ -172,24 +159,17 @@ http {
 
         # Configure the handling of PHP files
         location ~ \.php$ {
+            # Define the address and port of the FastCGI server
+            fastcgi_pass wordpress:9000;
             # Split the path information for PHP files
             fastcgi_split_path_info ^(.+\.php)(/.+)$;
             # Define the script filename parameter for FastCGI
             fastcgi_param SCRIPT_FILENAME $request_filename;
             # Include the FastCGI parameters
             include fastcgi_params;
-            # Define the address and port of the FastCGI server
-            fastcgi_pass wordpress:9000;
             # Indicate that HTTPS is being used
             fastcgi_param HTTPS on;
         }
-
-        # Define the supported SSL/TLS protocols
-        ssl_protocols TLSv1.2 TLSv1.3;
-        # Specify the path to the SSL certificate
-        ssl_certificate /etc/nginx/ssl/inception.crt;
-        # Specify the path to the SSL certificate key
-        ssl_certificate_key /etc/nginx/ssl/inception.key;
 
         # Define the location of the access log
         access_log /var/log/nginx/access.log;
@@ -202,56 +182,40 @@ http {
 
 }
 
-/////////////////////////////////////////////////////////////////////////////////
+/*----------------------------------------------------------------------------------------------------------------------------*\
 
 MARIADB
 
-MariaDB est un système de gestion de base de données relationnelle open source, dérivé de MySQL. Il a été développé par les créateurs originaux de MySQL à la suite de l'acquisition de MySQL par Oracle Corporation. MariaDB est conçu pour être hautement compatible avec MySQL, permettant aux utilisateurs de migrer facilement entre les deux systèmes sans modifications majeures de leurs applications ou bases de données.
-Principales caractéristiques de MariaDB
+MariaDB est un système de gestion de bases de données relationnelle indépendant, offrant des performances élevées, des moteurs de stockage flexibles et une compatibilité parfaite avec MySQL. Il se distingue aussi par ses fonctionnalités de sécurité complètes, son support JSON et sa scalabilité simple. Les principales utilisations de MariaDB incluent les applications Web, les bases de données Cloud, le E-commerce et les applications d’entreprise.
 
-    Compatibilité avec MySQL : MariaDB est compatible avec MySQL, ce qui signifie que les outils, les applications et les commandes qui fonctionnent avec MySQL fonctionnent généralement aussi avec MariaDB.
+    Compatibilité avec MySQL : MariaDB est compatible avec MySQL. Cela permet de convertir généralement les applications existantes, les outils et les scripts utilisant MySQL sans grand effort.
 
-    Performances améliorées : MariaDB offre des améliorations de performance par rapport à MySQL dans certains cas, grâce à l'optimisation des requêtes, des moteurs de stockage améliorés et des fonctionnalités de cache.
+    Haute performance : grâce à des fonctionnalités telles que des moteurs de stockage spécialisés, MariaDB parvient à traiter rapidement les requêtes même sous une charge importante et avec de grands volumes de données. La scalabilité horizontale par la réplication et le clustering est facile à configurer.
 
-    Sécurité renforcée : MariaDB comprend des fonctionnalités de sécurité supplémentaires, comme des rôles d'utilisateur plus flexibles et des plugins d'authentification renforcée.
+    Communauté active : une communauté mondiale composée de développeurs et entreprises contribue à l’évolution des bases de données MariaDB. Celles-ci bénéficient continuellement de nouvelles fonctionnalités et de mises à jour régulières.
 
-    Nouveaux moteurs de stockage : En plus des moteurs de stockage existants comme InnoDB et MyISAM, MariaDB propose de nouveaux moteurs de stockage tels que Aria, ColumnStore et MyRocks, chacun étant conçu pour des cas d'utilisation spécifiques.
-
-    Fonctionnalités avancées : MariaDB inclut des fonctionnalités avancées comme des répliques maîtres-maîtres asynchrones, des tables virtuelles, et des vues matérialisées.
-
-    Community-driven : En tant que projet open source, MariaDB est développé et maintenu par une communauté active de développeurs, garantissant une évolution continue et une réponse rapide aux besoins des utilisateurs.
+    Entièrement open source et gratuit : MariaDB est sous licence GPLv2. Cela élimine les frais de licence et vous donne un accès complet au code source, vous offrant une grande liberté pour adapter et étendre le logiciel.
 
 Utilisations courantes de MariaDB
 
-    Applications web : Utilisé comme base de données backend pour des applications web, y compris des systèmes de gestion de contenu (CMS) comme WordPress, Joomla et Drupal.
-    Analytique et reporting : Utilisé pour stocker et interroger de grandes quantités de données pour des applications d'analyse et de reporting.
-    Applications d'entreprise : Utilisé dans des applications d'entreprise nécessitant une base de données robuste et évolutive, comme des systèmes de gestion d'entrepôt, de gestion de la relation client (CRM), et de planification des ressources d'entreprise (ERP).
-
+  Applications Web : MariaDB est souvent utilisée pour gérer des données dans des applications web. Un exemple sont les systèmes de gestion de contenu comme WordPress, Joomla! ou Drupal, qui fonctionnent de manière fiable sur MariaDB malgré un grand nombre de visiteurs.
+  Bases de données Cloud : de nombreux fournisseurs Cloud comme Amazon Web Services (AWS), Google Cloud et Microsoft Azure proposent MariaDB en tant que service entièrement géré. Cela permet de faire évoluer les bases de données de manière flexible et de les maintenir automatiquement.
+  Boutiques en ligne : dans les systèmes de commerce électronique comme Magento, MariaDB gère les catalogues de produits, les commandes et les données des clients. Les bases de données MariaDB garantissent des transactions rapides, même avec un grand nombre d’utilisateurs.
+  Applications critiques pour l’entreprise : un autre domaine d’application concerne les environnements critiques pour l’entreprise avec des exigences élevées en matière de disponibilité et de performance.
 
         Dockerfile:
 
-# Use Debian Bullseye as the base image
-FROM debian:bullseye
+# Use Debian bookworm as the base image
+FROM debian:bookworm
 
 # Install MariaDB and other dependencies
-RUN apt-get update -y
-RUN apt-get upgrade -y
-RUN apt-get install -y mariadb-server
-RUN apt-get install -y mariadb-client
-RUN apt-get install -y procps
+RUN apt update -y && apt install -y mariadb-server mariadb-client procps
 
 # Copy the MariaDB configuration file to the container
 COPY conf/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf
 
-# Create directories for MariaDB runtime files and data
-RUN mkdir -p /var/run/mysqld
-RUN mkdir -p /var/lib/mysql
-
-# Set ownership and permissions for the MariaDB directories
-RUN chown mysql:mysql /var/run/mysqld/
-RUN chmod -R 755 /var/run/mysqld/
-RUN chown mysql:mysql /var/lib/mysql/
-RUN chmod -R 755 /var/lib/mysql/
+# Create directories for MariaDB runtime files and data and Set ownership and permissions for the MariaDB directories
+RUN mkdir -p /var/run/mysqld  /var/lib/mysql && chown -R mysql:mysql /var/run/mysqld/ /var/lib/mysql/ && chmod -R 755 /var/run/mysqld/ /var/lib/mysql/
 
 # Expose port 3306 for MariaDB
 EXPOSE 3306
@@ -280,6 +244,9 @@ user = mysql
 # The port on which MariaDB will listen for incoming connections
 port = 3306
 
+# Specifies that all IP addresses on the network can connect
+bind-address        = 0.0.0.0
+
 # The base directory for the MariaDB installation
 basedir = /usr
 
@@ -304,77 +271,80 @@ log_error = /var/log/mysql/error.log
 
         Script:
 
+# Specifies that the script should be executed using the Bash shell
     #!/bin/bash
 
-# Start the MariaDB service
-service mariadb start;
+# Exit immediately if any command returns a non-zero status
+set -e
 
+# Defines the directory where MariaDB data is stored
+DATADIR="/var/lib/mysql"
+
+# Checks if the MariaDB system database directory does not exist and initializes the MariaDB data directory if it has not been initialized yet
+if [ ! -d "$DATADIR/mysql" ]; then
+  mysql_install_db --user=mysql --datadir="$DATADIR" > /dev/null
+fi
+
+# Starts the MariaDB server in the background without network access and stores the process ID of the MariaDB server
+mysqld --user=mysql --datadir="$DATADIR" --skip-networking & pid=$!
+
+# Loop 60sec, Checks if MariaDB is ready to accept connections and sleep 1sec
+for i in $(seq 1 60); do
+  if mysqladmin ping --silent; then break; fi
+  sleep 1
+done
+
+# Final check to ensure MariaDB has started successfully
+if ! mysqladmin ping --silent; then
+  echo "MariaDB ne démarre pas."
+  exit 1
 # Log into MariaDB as root and create the database and the user
-mysql -e "CREATE DATABASE IF NOT EXISTS \`${SQL_DATABASE}\`;"
-mysql -e "CREATE USER IF NOT EXISTS \`${SQL_USER}\`@'localhost' IDENTIFIED BY '${SQL_PASSWORD}';"
-mysql -e "GRANT ALL PRIVILEGES ON \`${SQL_DATABASE}\`.* TO \`${SQL_USER}\`@'%' IDENTIFIED BY '${SQL_PASSWORD}';"
-mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${SQL_ROOT_PASSWORD}';"
-mysql -e "FLUSH PRIVILEGES;"
+fi
+
+mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASSWORD}'; FLUSH PRIVILEGES;" || true
+mysql -uroot -p"${DB_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;"
+mysql -uroot -p"${DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';"
+mysql -uroot -p"${DB_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%'; FLUSH PRIVILEGES;"
 
 # Shut down the MariaDB service gracefully
-mysqladmin -u root -p${SQL_ROOT_PASSWORD} shutdown
-# If needed for safety, restart the server upon errors and log information
-# mysqladmin -u root shutdown
+mysqladmin -uroot -p"${DB_ROOT_PASSWORD}" shutdown
 
-# Start the MariaDB server safely, allowing recovery and logging
-exec mysqld_safe
-
-# Print status message
-echo "MariaDB database and user were created successfully!"
+# Start the MariaDB server safely, allowing recovery and loggin
+exec mysqld --user=mysql --datadir="$DATADIR" --bind-address=0.0.0.0
 
 
-
-/////////////////////////////////////////////////////////////////////////////////
+/*----------------------------------------------------------------------------------------------------------------------------*\
 
 WORDPRESS
 
-WordPress est un système de gestion de contenu (CMS) open source largement utilisé pour la création de sites web et de blogs. Lancé pour la première fois en 2003, WordPress est devenu l'une des plateformes les plus populaires pour la création de sites web, alimentant plus d'un tiers de tous les sites web actifs sur Internet.
-Caractéristiques principales de WordPress
+WordPress est un système de gestion de contenu gratuit et open-source qui permet à toute personne de créer et de gérer facilement des sites internet. Lancé en tant que plateforme de blogs, le logiciel WordPress a évolué pour aider les utilisateurs à créer divers sites, des blogs et portfolios aux boutiques e-commerce
 
     Facilité d'utilisation : WordPress est réputé pour sa simplicité d'utilisation, permettant aux utilisateurs de créer et de gérer des sites web sans avoir besoin de connaissances techniques approfondies.
 
-    Personnalisable : WordPress offre une grande flexibilité grâce à des milliers de thèmes et de plugins disponibles, permettant aux utilisateurs de personnaliser facilement l'apparence et les fonctionnalités de leur site web.
+    Flexibilité : WordPress offre une grande flexibilité grâce à des milliers de thèmes et de plugins disponibles, pour créer n’importe quel type de site : un blog ou un site personnel, un blog photo, un site d’entreprise, un portfolio professionnel, un site gouvernemental, un magazine ou un site d’information, une communauté en ligne, voire un réseau de sites.
 
-    Grande communauté : WordPress bénéficie d'une vaste communauté de développeurs, de concepteurs et d'utilisateurs qui contribuent à son développement continu, offrant un support, des conseils et des ressources utiles.
+    Communauté : En tant que CMS open source le plus populaire sur le web, WordPress dispose d’une communauté dynamique et solidaire.
 
-    SEO convivial : WordPress est conçu avec le référencement (SEO) à l'esprit, offrant des fonctionnalités intégrées pour améliorer la visibilité des sites web dans les moteurs de recherche.
-
-    Multilingue : WordPress prend en charge plusieurs langues, permettant aux utilisateurs de créer des sites web multilingues.
+    Multilingue : WordPress est disponible dans plus de 70 langues.
 
     Sécurité : Bien qu'aucun système ne soit totalement à l'abri des failles de sécurité, WordPress s'efforce d'améliorer constamment sa sécurité et propose des mises à jour régulières pour protéger les sites web contre les menaces potentielles.
 
 Utilisations courantes de WordPress
 
-    Blogs personnels et professionnels : WordPress a été initialement conçu comme une plateforme de blogging et reste populaire pour la création de blogs personnels, professionnels et d'entreprise.
-
-    Sites web d'entreprise : De nombreux sites web d'entreprise utilisent WordPress pour créer des sites web institutionnels, vitrines, portfolios et autres.
-
-    Boutiques en ligne : Avec l'aide de plugins comme WooCommerce, WordPress est également utilisé pour créer des boutiques en ligne et des sites de commerce électronique.
-
-    Sites web communautaires : WordPress peut être utilisé pour créer des forums, des réseaux sociaux et d'autres types de sites web communautaires grâce à des plugins comme BuddyPress.
+    Blogs personnels et professionnels 
+    Sites web d'entreprise
+    Boutiques en ligne
+    Sites web communautaires
 
 
     Dockerfile:
 
-# Use Debian Bullseye as the base image
-FROM debian:bullseye
+# Use Debian bookworm as the base image
+FROM debian:bookworm
 
-# Update package list
-RUN apt-get update -y
+# Update qnd install PHP 8.2 FPM qnd mysql
+RUN apt update -y && apt install -y wget php8.2 php-fpm php-mysql
 
-# Upgrade installed packages
-RUN apt-get upgrade -y
-
-# Install wget to download files
-RUN apt-get install -y wget
-
-# Install PHP-FPM 7.4 and MySQL module
-RUN apt-get install -y php7.4 php-fpm php-mysql
 
 # Download and install WP-CLI (WordPress Command Line Interface)
 RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
@@ -382,18 +352,13 @@ RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.ph
     && mv wp-cli.phar /usr/local/bin/wp
 
 # Install MySQL client
-RUN apt-get update && apt-get install -y default-mysql-client
-RUN apt-get install -y mariadb-client
+RUN apt update -y && apt install -y default-mysql-client mariadb-client
 
-# Download WordPress archive and extract it to /var/www/html directory
-RUN wget https://wordpress.org/wordpress-6.1.1.tar.gz -P /var/www/html \
-    && cd /var/www/html \
-    && tar -xzf /var/www/html/wordpress-6.1.1.tar.gz \
-    && rm /var/www/html/wordpress-6.1.1.tar.gz
+# Download WordPress archive and extract it to /var/www/html directory and rm wordpress-6.8.tar.gz
+RUN wget https://wordpress.org/wordpress-6.8.tar.gz -P /var/www/html && cd /var/www/html && tar -xzf /var/www/html/wordpress-6.8.tar.gz && rm /var/www/html/wordpress-6.8.tar.gz
 
 # Set permissions for web server to read and execute files in the web root directory
-RUN chown -R www-data:www-data /var/www/*
-RUN chmod -R 755 /var/www/*
+RUN chown -R www-data:www-data /var/www/* && chmod -R 755 /var/www/* 
 
 # Expose PHP-FPM port 9000
 EXPOSE 9000
@@ -403,7 +368,7 @@ COPY ./conf/wpscript.sh .
 RUN chmod +x ./wpscript.sh
 
 # Copy custom PHP-FPM configuration file
-COPY ./conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
+COPY ./conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
 
 # Set entry point to run the WordPress setup script
 ENTRYPOINT ["bash", "./wpscript.sh"]
@@ -436,36 +401,38 @@ clear_env = no
 
     Script :
 
+#!/bin/bash
+
+sleep 10
+
 # Change directory to WordPress installation directory
 cd /var/www/html/wordpress
 
 # Check if wp-config.php file exists
 if [ ! -f wp-config.php ]; then
-    # If wp-config.php does not exist, create it
-    echo "Creating config ...\n"
-    # Use WP-CLI to create wp-config.php with specified database credentials
-    wp config create --allow-root \
-        --dbname=${SQL_DATABASE} \
-        --dbuser=${SQL_USER} \
-        --dbpass=${SQL_PASSWORD} \
-        --dbhost=mariadb \
-        --path='/var/www/html/wordpress' \
-        --url=https://${DOMAIN_NAME}
+	echo "CREATING CONFIG .... !\n"
+	wp config create --allow-root \
+		--dbname=${DB_NAME} \
+		--dbuser=${DB_USER} \
+		--dbpass=${DB_PASSWORD} \
+		--dbhost=mariadb \
+		--path='/var/www/html/wordpress' \
+		--url=https://${WP_URL}
 
     # Use WP-CLI to install WordPress with specified settings
-    wp core install --allow-root \
-        --path='/var/www/html/wordpress' \
-        --url=https://${DOMAIN_NAME} \
-        --title=${SITE_TITLE} \
-        --admin_user=${ADMIN_USER} \
-        --admin_password=${ADMIN_PASSWORD} \
-        --admin_email=${ADMIN_EMAIL}
+    wp core install	--allow-root \
+				--path='/var/www/html/wordpress' \
+				--url=https://${WP_URL} \
+				--title=${WP_TITLE} \
+				--admin_user="${WP_ADMIN}" \
+				--admin_password="${WP_ADMIN_PASSWORD}" \
+				--admin_email="${WP_ADMIN_EMAIL}"
 
     # Use WP-CLI to create additional user with specified role and credentials
-    wp user create --allow-root \
-        ${USER1_LOGIN} ${USER1_MAIL} \
-        --role=author \
-        --user_pass=${USER1_PASS}
+    wp user create \
+				"${WP_USER}" "${WP_USER_EMAIL}" \
+				--role=author \
+				--user_pass="${WP_USER_PASSWORD}" --allow-root
 
     # Flush the cache using WP-CLI
     wp cache flush --allow-root
@@ -481,8 +448,7 @@ fi
 exec /usr/sbin/php-fpm7.4 -F -R
 
 
-/////////////////////////////////////////////////////////////////////////////////
-
+/*----------------------------------------------------------------------------------------------------------------------------*\
 DOCKER-COMPOSE
 
 
@@ -504,9 +470,9 @@ services:
     volumes:
       - mariadb:/var/lib/mysql  # Mount volume for MariaDB data storage
     expose:
-      - "3306:3306"  # Expose port 3306 for communication
+      - "3306"  # Expose port 3306 for communication
     healthcheck:
-      test: mysqladmin ping --host=localhost -p${SQL_ROOT_PASSWORD}  # Health check command
+      test: mysqladmin ping --host=localhost -p${DB_PASSWORD}  # Health check command
       interval: 5s
       timeout: 1s
       retries: 20
@@ -529,7 +495,7 @@ services:
     volumes:
       - wordpress:/var/www/html/wordpress  # Mount volume for WordPress data storage
     expose:
-      - "9000:9000"  # Expose port 9000 for PHP-FPM
+      - "9000"  # Expose port 9000 for PHP-FPM
        
   # Nginx service configuration
   nginx:
@@ -561,29 +527,15 @@ volumes:
     driver_opts:
       type: 'none'
       o: 'bind'  # Bind mounts allow the volumes to be mounted on a host path and can be modified by processes outside of Docker.
-      device: "/home/nsalhi/data/mariadb"  # Specify where to store the folder on your local machine
+      device: "/home/pgiroux/data/mariadb"  # Specify where to store the folder on your local machine
   wordpress:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: "/home/nsalhi/data/wordpress"  # Specify where to store the folder on your local machine
+      device: "/home/pgiroux/data/wordpress"  # Specify where to store the folder on your local machine
 
 networks:
   inception:  # Create the inception network
     name: inception
     driver: bridge
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-- docker ps
-
-- docker exec -it mariadb-container /bin/bash
-
-- mysql -u root -p
-
-- SHOW DATABASES;
-
-- USE wordpress;
-
-- EXIT;

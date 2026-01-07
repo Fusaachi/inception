@@ -7,8 +7,7 @@ if [ ! -d "$DATADIR/mysql" ]; then
   mysql_install_db --user=mysql --datadir="$DATADIR" > /dev/null
 fi
 
-mysqld --user=mysql --datadir="$DATADIR" --skip-networking &
-pid=$!
+mysqld --user=mysql --datadir="$DATADIR" --skip-networking & pid=$!
 
 for i in $(seq 1 60); do
   if mysqladmin ping --silent; then break; fi
