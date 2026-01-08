@@ -18,12 +18,13 @@ stop:
 clean:
 	sudo docker compose -f srcs/docker-compose.yml down --rmi all --volumes
 
-fclean: clean
+fclean:
+	clean
 
 re:
-	sudo docker compose -f srcs/docker-compose.yml up -d --force-recreate --build
+	fclean all
 
-prune: fclean
+prune:
 	sudo docker container prune -f
 	sudo docker image prune -a -f
 	sudo docker volume prune -a -f

@@ -52,6 +52,7 @@ Instruction
             DB_NAME = mariadb
             DB_USER = userdb
             DB_PASSWORD = passworddb
+            DB_ROOT_PASSWORD = rootpassworddb
 
             WP_URL = login.42.fr
             WP_TITLE =  title
