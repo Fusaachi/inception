@@ -1,44 +1,38 @@
-DOCKER
 
+/*This project has been created as part of the 42 curriculum by pgiroux
 
-Docker est à la fois une bibliothèque et  une plateforme logicielles permettant de faire tourner certaines applications dans des conteneurs
-Docker permet d'empaqueter une application et ses dépendances dans un conteneur isolé qui peut être exécuté sur n'importe quel serveur.
+Description
 
+This project aims to expand knowledge of system administration using Docker.
+By virtualizing multiple Docker images by creating them in a personal virtual machineThis project aims to expand knowledge of system administration using Docker.
 
-1. Conteneurisation : 
+This project consists of having you set up a small infrastructure composed of different
+services under specific rules. The whole project has to be done in a virtual machine using Docker Compose
 
-Contrairement à la virtualisation traditionnelle qui utilise des machines virtuelles (VMs) et nécessite un hyperviseur pour émuler le matériel, Docker utilise des conteneurs. Les conteneurs partagent le noyau du système d'exploitation hôte, ce qui les rend beaucoup plus légers et rapides à démarrer.
+Each Docker image must have the same name as the corresponding service.
+Each service must be run in a dedicated container.
+For performance reasons, containers are built from the penultimate stable version
+of Debian.
+Each Dockerfile must be written by yourself, one per service. Dockerfiles must
+be called in the docker-compose.yml file by the Makefile.
+It is  prohibited to use ready-made Docker images, as well as services such as DockerHub
+(Alpine/Debian being excluded from this rule), so the project's Docker images are created by yourself.
+The configuration:
+• A Docker container containing NGINX with TLSv0.2 or TLSv1.3 only.
+• A Docker container containing only WordPress + php-fpm (which must be installed and
+configured), without nginx.
+• A Docker container containing only MariaDB, without nginx.
+• A volume containing your WordPress database.
+• A second volume containing your WordPress website files.
+• Volumes named Docker are used for two persistent storages. Linked mounts
+are not allowed for these volumes.
+• Both named volumes must store their data in /home/login/data on the host machine.
+• A Docker network that establishes the connection between containers.
+Containers must restart in case of failure.
 
-2. Images Docker :
+Instruction 
 
-Une image Docker est un instantané ou un plan des bibliothèques et des dépendances requises dans un conteneur pour qu'une application puisse s'exécuter.
-
-3. Conteneurs Docker :
-
-Un conteneur est une instance d'une image Docker. C'est un environnement d'exécution isolé qui exécute une application. Les conteneurs peuvent être démarrés, arrêtés, déplacés et supprimés de manière flexible, facilitant le déploiement et la gestion des applications.
-
-4. Docker Engine :
-
-Docker Engine est une technologie de conteneurisation open source permettant de créer et de conteneuriser vos applications.
-L'interface de ligne de commande (CLI) utilise les API Docker pour contrôler le démon Docker ou interagir avec lui, soit par le biais de scripts, soit par des commandes directes. De nombreuses autres applications Docker utilisent l'API et la CLI sous-jacentes. Le démon crée et gère les objets Docker, tels que les images, les conteneurs, les réseaux et les volumes.
-
-5. Registres Docker :
-
-Un registre de conteneurs est un service qui permet de stocker et distribuer des images de conteneurs.
-
-6. Docker Compose :
-
-Docker Compose est un outil permettant d'orchestrer plusieurs applications exécutées dans des conteneurs Docker. Cela permet notamment d'écrire l'ensemble des paramètres et dépendances des applications, ainsi que la manière dont elles interagissent entre-elles dans un fichier YAML appelé docker-compose.
-
-7. Avantages de Docker :
-
-    Portabilité : Les conteneurs peuvent être exécutés sur n'importe quel système compatible avec Docker, ce qui facilite le déploiement dans différents environnements.
-    Isolation : Chaque conteneur est isolé, ce qui améliore la sécurité et permet d'éviter les conflits de dépendances.
-    Efficacité des ressources : Les conteneurs partagent le noyau du système d'exploitation, ce qui les rend plus légers en termes de mémoire et de CPU par rapport aux machines virtuelles.
-    Agilité et rapidité : Les conteneurs peuvent être démarrés en quelques secondes, ce qui accélère le développement, les tests et les déploiements.
-
-
-    Dockerfile command:
+/*-----Dockerfile command-----*\
         
         * FROM : Permet d’indiquer à Docker sous quel OS doit tourner la machine virtuelle. C’est le premier mot clef du Dockerfile et celui ci est obligatoire.
 
@@ -53,38 +47,10 @@ Docker Compose est un outil permettant d'orchestrer plusieurs applications exéc
         * EXPOSE : Indique que le conteneur écoute sur les ports réseau spécifiés au moment de l'exécution.
 
 
-/*----------------------------------------------------------------------------------------------------------------------------*\
-
-NGINX
+/*---------NGINX---------*\
 
 
-
-Nginx (prononcé « engine-x ») est un serveur web open source polyvalent et performant qui joue un rôle crucial dans l'infrastructure web moderne et la gestion des conteneurs . Initialement conçu pour relever le défi de la gestion de quantités massives de connexions simultanées,
-
-Principales fonctionnalités de Nginx
-
-     Architecture pilotée par événements : Contrairement aux machines web traditionnelles qui créent un nouveau processus ou thread pour chaque connexion entrante, Nginx utilise une approche pilotée par les événements. Cela signifie qu'il peut gérer un nombre massif de connexions avec une utilisation minimale des ressources, ce qui le rend très efficace et évolutif.
-     
-    Serveur HTTP : Nginx est principalement utilisé comme serveur HTTP pour servir des pages web. Il est capable de gérer un grand nombre de connexions simultanées grâce à son architecture asynchrone et événementielle.
-
-     Reverse Proxy : Nginx peut agir comme un proxy inverse, assis en face d'une ou plusieurs machines backend (comme Apache ou Node.js). Cela permet à Nginx de gérer le trafic entrant et le cache, d'effectuer un équilibrage de charge et de fournir des fonctionnalités de sécurité supplémentaires avant de transmettre les demandes au serveur principal approprié.
-
-     Répartition de charge : Il peut répartir le trafic entrant sur plusieurs serveurs principaux, évitant ainsi la surcharge d’un seul serveur. Cela améliore les performances, la fiabilité et la tolérance aux pannes du site.
- 
-     Proxy de messagerie : Nginx peut aussi être configuré comme un proxy pour des services de messagerie tels que IMAP, POP3, et SMTP.
-
-    Mise en cache : Pour stocker le contenu fréquemment consulté dans son cache, ce qui lui permet de traiter les demandes ultérieures pour cette page directement à partir du cache au lieu de l'extraire du serveur principal. Cela réduit considérablement la charge du serveur et améliore la vitesse du site web.
-
-    Sécurité : Nginx offre diverses fonctionnalités de sécurité, y compris la terminaison SSL/TLS, la limitation du débit, le contrôle d'accès et la protection contre les attaques courantes.
-
-Utilisations courantes
-
-    Hébergement de sites web statiques et dynamiques : Grâce à sa capacité à gérer des connexions concurrentes, Nginx est souvent utilisé pour héberger des sites web à fort trafic.
-    Proxy inverse : Pour protéger les serveurs backend et améliorer les performances grâce à la mise en cache et à l'équilibrage de charge.
-    Équilibrage de charge : Pour distribuer le trafic sur plusieurs serveurs et améliorer la disponibilité des applications.
-    Passerelle API : Pour gérer et sécuriser les appels API, en fournissant des fonctionnalités comme la limitation de débit, l'authentification et la mise en cache.
-
-        Dockerfile :
+Dockerfile :
 
 # Use Debian bookworm as the base image
 FROM debian:bookworm
@@ -107,7 +73,10 @@ RUN chmod 755 /var/www/html && chown -R www-data:www-data /var/www/html
 # Start NGINX in the foreground
 CMD ["nginx", "-g", "daemon off;"]
 
-        Fichier config:
+
+
+
+Config Files:
 
 # Define the user under which the NGINX worker processes will run
 user www-data;
@@ -182,28 +151,10 @@ http {
 
 }
 
-/*----------------------------------------------------------------------------------------------------------------------------*\
+/*---------MARIADB---------*\
 
-MARIADB
 
-MariaDB est un système de gestion de bases de données relationnelle indépendant, offrant des performances élevées, des moteurs de stockage flexibles et une compatibilité parfaite avec MySQL. Il se distingue aussi par ses fonctionnalités de sécurité complètes, son support JSON et sa scalabilité simple. Les principales utilisations de MariaDB incluent les applications Web, les bases de données Cloud, le E-commerce et les applications d’entreprise.
-
-    Compatibilité avec MySQL : MariaDB est compatible avec MySQL. Cela permet de convertir généralement les applications existantes, les outils et les scripts utilisant MySQL sans grand effort.
-
-    Haute performance : grâce à des fonctionnalités telles que des moteurs de stockage spécialisés, MariaDB parvient à traiter rapidement les requêtes même sous une charge importante et avec de grands volumes de données. La scalabilité horizontale par la réplication et le clustering est facile à configurer.
-
-    Communauté active : une communauté mondiale composée de développeurs et entreprises contribue à l’évolution des bases de données MariaDB. Celles-ci bénéficient continuellement de nouvelles fonctionnalités et de mises à jour régulières.
-
-    Entièrement open source et gratuit : MariaDB est sous licence GPLv2. Cela élimine les frais de licence et vous donne un accès complet au code source, vous offrant une grande liberté pour adapter et étendre le logiciel.
-
-Utilisations courantes de MariaDB
-
-  Applications Web : MariaDB est souvent utilisée pour gérer des données dans des applications web. Un exemple sont les systèmes de gestion de contenu comme WordPress, Joomla! ou Drupal, qui fonctionnent de manière fiable sur MariaDB malgré un grand nombre de visiteurs.
-  Bases de données Cloud : de nombreux fournisseurs Cloud comme Amazon Web Services (AWS), Google Cloud et Microsoft Azure proposent MariaDB en tant que service entièrement géré. Cela permet de faire évoluer les bases de données de manière flexible et de les maintenir automatiquement.
-  Boutiques en ligne : dans les systèmes de commerce électronique comme Magento, MariaDB gère les catalogues de produits, les commandes et les données des clients. Les bases de données MariaDB garantissent des transactions rapides, même avec un grand nombre d’utilisateurs.
-  Applications critiques pour l’entreprise : un autre domaine d’application concerne les environnements critiques pour l’entreprise avec des exigences élevées en matière de disponibilité et de performance.
-
-        Dockerfile:
+Dockerfile:
 
 # Use Debian bookworm as the base image
 FROM debian:bookworm
@@ -230,7 +181,9 @@ RUN chmod +x ./init.sh
 ENTRYPOINT ["bash", "./init.sh"]
 
 
-    Fichier configue:
+
+
+Config File:
 
 # MariaDB Server configuration
 [server]
@@ -269,7 +222,9 @@ max_allowed_packet = 64M
 log_error = /var/log/mysql/error.log
 
 
-        Script:
+
+
+Script:
 
 # Specifies that the script should be executed using the Bash shell
     #!/bin/bash
@@ -313,31 +268,9 @@ mysqladmin -uroot -p"${DB_ROOT_PASSWORD}" shutdown
 exec mysqld --user=mysql --datadir="$DATADIR" --bind-address=0.0.0.0
 
 
-/*----------------------------------------------------------------------------------------------------------------------------*\
+/*---------WORDPRESS---------*\
 
-WORDPRESS
-
-WordPress est un système de gestion de contenu gratuit et open-source qui permet à toute personne de créer et de gérer facilement des sites internet. Lancé en tant que plateforme de blogs, le logiciel WordPress a évolué pour aider les utilisateurs à créer divers sites, des blogs et portfolios aux boutiques e-commerce
-
-    Facilité d'utilisation : WordPress est réputé pour sa simplicité d'utilisation, permettant aux utilisateurs de créer et de gérer des sites web sans avoir besoin de connaissances techniques approfondies.
-
-    Flexibilité : WordPress offre une grande flexibilité grâce à des milliers de thèmes et de plugins disponibles, pour créer n’importe quel type de site : un blog ou un site personnel, un blog photo, un site d’entreprise, un portfolio professionnel, un site gouvernemental, un magazine ou un site d’information, une communauté en ligne, voire un réseau de sites.
-
-    Communauté : En tant que CMS open source le plus populaire sur le web, WordPress dispose d’une communauté dynamique et solidaire.
-
-    Multilingue : WordPress est disponible dans plus de 70 langues.
-
-    Sécurité : Bien qu'aucun système ne soit totalement à l'abri des failles de sécurité, WordPress s'efforce d'améliorer constamment sa sécurité et propose des mises à jour régulières pour protéger les sites web contre les menaces potentielles.
-
-Utilisations courantes de WordPress
-
-    Blogs personnels et professionnels 
-    Sites web d'entreprise
-    Boutiques en ligne
-    Sites web communautaires
-
-
-    Dockerfile:
+Dockerfile:
 
 # Use Debian bookworm as the base image
 FROM debian:bookworm
@@ -347,9 +280,7 @@ RUN apt update -y && apt install -y wget php8.2 php-fpm php-mysql
 
 
 # Download and install WP-CLI (WordPress Command Line Interface)
-RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
-    && chmod +x wp-cli.phar \
-    && mv wp-cli.phar /usr/local/bin/wp
+RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && chmod +x wp-cli.phar  && mv wp-cli.phar /usr/local/bin/wp
 
 # Install MySQL client
 RUN apt update -y && apt install -y default-mysql-client mariadb-client
@@ -374,7 +305,9 @@ COPY ./conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
 ENTRYPOINT ["bash", "./wpscript.sh"]
 
 
-    Fichier de configue :
+
+
+Config File :
 
 # PHP-FPM configuration for the www pool
 
@@ -399,7 +332,10 @@ pm.max_requests = 100
 # Do not clear environment variables in FPM workers
 clear_env = no
 
-    Script :
+
+
+
+Script :
 
 #!/bin/bash
 
@@ -448,8 +384,7 @@ fi
 exec /usr/sbin/php-fpm7.4 -F -R
 
 
-/*----------------------------------------------------------------------------------------------------------------------------*\
-DOCKER-COMPOSE
+/*---------DOCKER-COMPOSE---------*\
 
 
 # Define the version of Docker Compose format
@@ -539,3 +474,43 @@ networks:
   inception:  # Create the inception network
     name: inception
     driver: bridge
+
+
+Resources
+
+https://tuto.grademe.fr/inception/
+https://www.nicelydev.com/docker
+https://docs.docker.com/compose/
+https://www.debian.org/download.fr.html
+https://fr.wikipedia.org/wiki/NGINX
+https://fr.wikipedia.org/wiki/MariaDB
+https://fr.wikipedia.org/wiki/WordPress
+
+
+Project description
+
+
+/*---------DOCKER---------*\
+
+Docker is both a software library and platform that allows certain applications to run in containers. Docker allows you to package an application and its dependencies in an isolated container that can be run on any server.
+
+/*---------NGINX---------*\
+Nginx (pronounced “engine-x”) is a versatile and high-performance open source web server that plays a crucial role in modern web infrastructure and container management. Initially designed to address the challenge of managing massive amounts of simultaneous connections.
+
+/*---------MARIADB---------*\
+MariaDB is an independent relational database management system offering high performance, flexible storage engines, and perfect compatibility with MySQL. It also stands out for its comprehensive security features, JSON support, and easy scalability. The main uses of MariaDB include web applications, cloud databases, e-commerce, and enterprise applications.
+
+/*---------WORDPRESS---------*\
+WordPress is a free and open-source content management system that allows anyone to easily create and manage websites. Launched as a blogging platform, WordPress software has evolved to help users create a variety of sites, from blogs and portfolios to e-commerce stores.
+
+/*---------Virtual Machines vs Docker---------*\
+A VM allows you to run a virtual machine on any hardware. Docker allows you to run an application on any operating system.
+
+/*---------Secrets vs Environment Variables---------*\
+The difference between the two is that environment variables have values that can be revealed, while secrets have hidden values. 
+
+/*---------Docker Network vs Host Network---------*\
+The Docker Network provides network isolation for containers with private IP addresses, while the Host Network allows containers to directly use the host's network interface, without isolation.
+
+/*---------Docker Volumes vs Bind Mounts---------*\
+Bind mounts directly link a file or directory on the host to a container, while volumes are storage spaces managed by Docker, which are more secure and portable.
